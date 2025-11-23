@@ -11,7 +11,9 @@ export const createBattleRoom = async (hostUserId, hostGrimoire) => {
       opponentGrimoire: null,
       status: 'waiting', // waiting, active, completed
       createdAt: new Date().toISOString(),
-      winner: null
+      winner: null,
+      hostInventory: hostGrimoire.inventory || {},
+      opponentInventory: {}
     };
     
     const docRef = await addDoc(collection(db, 'battleRooms'), battleRoom);
@@ -49,7 +51,7 @@ export const joinBattleRoom = async (roomId, userId, grimoire) => {
       hostActionPoints: 3,
       opponentActionPoints: 3,
       maxActionPoints: 3,
-      hostInventory: hostGrimoire.inventory || {},
+      hostInventory: roomData.hostInventory || {},
       opponentInventory: grimoire.inventory || {},
       battleLog: [`Battle started! ${hostGrimoire.constellation} vs ${grimoire.constellation}`]
     });
@@ -77,7 +79,7 @@ export const useItemInBattle = async (roomId, userId, itemId) => {
     }
     
     const { SHOP_ITEMS } = await import('../data/items');
-    const item = SHOP_ITEMS[itemId];
+    const item = SHOP_ITEMS[itemId.toUpperCase()] || SHOP_ITEMS[itemId];
     
     if (!item) return { success: false, error: 'Invalid item' };
     

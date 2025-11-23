@@ -167,7 +167,7 @@ export const updateGrimoire = async (userId, updates) => {
 };
 
 // Battle functions
-export const recordBattleResult = async (userId, result, sparksEarned) => {
+export const recordBattleResult = async (userId, result, sparksEarned, expEarned) => {
   try {
     const grimoire = await getUserGrimoire(userId);
     if (!grimoire.success) return grimoire;
@@ -182,17 +182,26 @@ export const recordBattleResult = async (userId, result, sparksEarned) => {
       bestWinStreak: result === 'win' ? Math.max(currentStats.bestWinStreak, currentStats.winStreak + 1) : currentStats.bestWinStreak
     };
     
+    const newExp = grimoire.grimoire.experience + expEarned;
+    const newLevel = Math.floor(newExp / 100) + 1;
+    const leveledUp = newLevel > grimoire.grimoire.level;
+    
     const updates = {
       battleStats: newStats,
-      soulSparks: grimoire.grimoire.soulSparks + sparksEarned,
-      experience: grimoire.grimoire.experience + (result === 'win' ? 25 : 10)
+      soulSparks: grimoire.grimoire.soulSparks + sparksEarned + (leveledUp ? 100 : 0),
+      experience: newExp,
+      level: newLevel
     };
     
-    // Check for level up
-    const newLevel = Math.floor(updates.experience / 100) + 1;
-    if (newLevel > grimoire.grimoire.level) {
-      updates.level = newLevel;
-      updates.soulSparks += newLevel * 10; // Bonus sparks for leveling up
+    // Boost stats on level up
+    if (leveledUp) {
+      const statBoost = Math.floor(newLevel / 5) + 1;
+      updates.stats = {
+        attack: grimoire.grimoire.stats.attack + statBoost,
+        defense: grimoire.grimoire.stats.defense + statBoost,
+        magic: grimoire.grimoire.stats.magic + statBoost,
+        speed: grimoire.grimoire.stats.speed + statBoost
+      };
     }
     
     return await updateGrimoire(userId, updates);
@@ -204,11 +213,21 @@ export const recordBattleResult = async (userId, result, sparksEarned) => {
 // Leaderboard functions
 export const getLeaderboard = async (type = 'wins', limitCount = 10) => {
   try {
-    const q = query(
-      collection(db, 'grimoires'),
-      orderBy(`battleStats.${type}`, 'desc'),
-      limit(limitCount)
-    );
+    let q;
+    
+    if (type === 'level') {
+      q = query(
+        collection(db, 'grimoires'),
+        orderBy('level', 'desc'),
+        limit(limitCount)
+      );
+    } else {
+      // For battle stats, we'll get all and sort in JavaScript to avoid index requirements
+      q = query(
+        collection(db, 'grimoires'),
+        limit(50) // Get more to sort properly
+      );
+    }
     
     const querySnapshot = await getDocs(q);
     const leaderboard = [];
@@ -220,14 +239,23 @@ export const getLeaderboard = async (type = 'wins', limitCount = 10) => {
       });
     });
     
-    return { success: true, leaderboard };
+    // Sort in JavaScript if needed
+    if (type !== 'level') {
+      leaderboard.sort((a, b) => {
+        const aValue = type === 'wins' ? a.battleStats?.wins || 0 : a.battleStats?.bestWinStreak || 0;
+        const bValue = type === 'wins' ? b.battleStats?.wins || 0 : b.battleStats?.bestWinStreak || 0;
+        return bValue - aValue;
+      });
+    }
+    
+    return { success: true, leaderboard: leaderboard.slice(0, limitCount) };
   } catch (error) {
     return { success: false, error: error.message };
   }
 };
 
-// Card shop functions
-export const purchaseCard = async (userId, cardId, cost) => {
+// Shop functions
+export const purchaseItem = async (userId, itemId, cost) => {
   try {
     const grimoire = await getUserGrimoire(userId);
     if (!grimoire.success) return grimoire;
@@ -236,9 +264,13 @@ export const purchaseCard = async (userId, cardId, cost) => {
       return { success: false, error: 'Insufficient Soul Sparks' };
     }
     
+    const currentInventory = grimoire.grimoire.inventory || {};
     const updates = {
       soulSparks: grimoire.grimoire.soulSparks - cost,
-      unlockedCards: [...grimoire.grimoire.unlockedCards, cardId]
+      inventory: {
+        ...currentInventory,
+        [itemId]: (currentInventory[itemId] || 0) + 1
+      }
     };
     
     return await updateGrimoire(userId, updates);
@@ -246,3 +278,6 @@ export const purchaseCard = async (userId, cardId, cost) => {
     return { success: false, error: error.message };
   }
 };
+
+// Legacy function for compatibility
+export const purchaseCard = purchaseItem;

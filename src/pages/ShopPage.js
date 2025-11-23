@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
-import { purchaseCard } from '../utils/firebase';
+import { purchaseItem } from '../utils/firebase';
 import { SHOP_ITEMS } from '../data/items';
 
 const ShopPage = ({ user, grimoire, updateGrimoire }) => {
@@ -20,9 +20,13 @@ const ShopPage = ({ user, grimoire, updateGrimoire }) => {
     setPurchasing(item.id);
     
     try {
-      const result = await purchaseCard(user.uid, item.id, item.cost);
+      const result = await purchaseItem(user.uid, item.id, item.cost);
       if (result.success) {
-        updateGrimoire({ soulSparks: grimoire.soulSparks - item.cost });
+        const newInventory = { ...(grimoire.inventory || {}), [item.id]: (grimoire.inventory?.[item.id] || 0) + 1 };
+        updateGrimoire({ 
+          soulSparks: grimoire.soulSparks - item.cost,
+          inventory: newInventory
+        });
         alert(`Purchased ${item.name}!`);
       } else {
         alert('Purchase failed: ' + result.error);
