@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/constellation-grimoire-game/static/css/main.2455994d.css",
+    "main.js": "/constellation-grimoire-game/static/js/main.6490aaf7.js",
+    "static/js/266.c40af14e.chunk.js": "/constellation-grimoire-game/static/js/266.c40af14e.chunk.js",
+    "index.html": "/constellation-grimoire-game/index.html",
+    "main.2455994d.css.map": "/constellation-grimoire-game/static/css/main.2455994d.css.map",
+    "main.6490aaf7.js.map": "/constellation-grimoire-game/static/js/main.6490aaf7.js.map",
+    "266.c40af14e.chunk.js.map": "/constellation-grimoire-game/static/js/266.c40af14e.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.2455994d.css",
+    "static/js/main.6490aaf7.js"
+  ]
+}
