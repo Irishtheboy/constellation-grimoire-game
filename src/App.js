@@ -11,7 +11,9 @@ import ProfilePage from './pages/ProfilePage';
 import SpellsPage from './pages/SpellsPage';
 import AdventureLogPage from './pages/AdventureLogPage';
 import FriendsPage from './pages/FriendsPage';
+import AboutPage from './pages/AboutPage';
 import GrimoireCreation from './components/GrimoireCreation';
+import TutorialModal from './components/TutorialModal';
 import { audioManager } from './utils/audio';
 import './App.css';
 
@@ -20,6 +22,7 @@ function App() {
   const [grimoire, setGrimoire] = useState(null);
   const [loading, setLoading] = useState(true);
   const [needsGrimoire, setNeedsGrimoire] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
     // Initialize audio on first user interaction
@@ -56,6 +59,11 @@ function App() {
   const handleGrimoireCreated = (newGrimoire) => {
     setGrimoire(newGrimoire);
     setNeedsGrimoire(false);
+    // Show tutorial for new users
+    const hasSeenTutorial = localStorage.getItem('constellation-tutorial-seen');
+    if (!hasSeenTutorial) {
+      setShowTutorial(true);
+    }
   };
 
   const updateGrimoire = (updates) => {
@@ -69,6 +77,9 @@ function App() {
           <div className="constellation-spinner">⭐</div>
           <h2>Loading Constellation Grimoire...</h2>
           <p>Connecting to the celestial realm</p>
+          <div className="loading-credits">
+            <p>by Franco Lukhele • Alchemy Studio</p>
+          </div>
         </div>
       </div>
     );
@@ -90,6 +101,13 @@ function App() {
   return (
     <Router>
       <div className="app">
+        <TutorialModal 
+          isOpen={showTutorial} 
+          onClose={() => {
+            setShowTutorial(false);
+            localStorage.setItem('constellation-tutorial-seen', 'true');
+          }} 
+        />
         <Routes>
           <Route 
             path="/" 
@@ -158,6 +176,15 @@ function App() {
             path="/friends" 
             element={
               <FriendsPage 
+                user={user} 
+                grimoire={grimoire}
+              />
+            } 
+          />
+          <Route 
+            path="/about" 
+            element={
+              <AboutPage 
                 user={user} 
                 grimoire={grimoire}
               />

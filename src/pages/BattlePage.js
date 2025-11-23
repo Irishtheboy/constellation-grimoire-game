@@ -156,6 +156,9 @@ const BattlePage = ({ user, grimoire, updateGrimoire }) => {
           <div className="lobby-header">
             <h2>⚔️ Battle Arena Lobby</h2>
             <p>Challenge other wizards to magical combat</p>
+            <div className="game-credits">
+              <p>by <strong>Franco Lukhele</strong> • <em>Alchemy Studio</em></p>
+            </div>
           </div>
 
           <div className="create-room-section">
@@ -315,6 +318,23 @@ const BattlePage = ({ user, grimoire, updateGrimoire }) => {
         .lobby-header { text-align: center; margin-bottom: 40px; }
         .lobby-header h2 { color: #d4c4b0; margin-bottom: 10px; }
         .lobby-header p { color: #a09080; }
+        
+        .game-credits {
+          margin-top: 10px;
+          padding-top: 8px;
+          border-top: 1px solid rgba(160, 144, 128, 0.3);
+        }
+        
+        .game-credits p {
+          color: rgba(160, 144, 128, 0.6);
+          font-size: 0.8rem;
+          font-style: italic;
+          margin: 0;
+        }
+        
+        .game-credits strong {
+          color: #d4c4b0;
+        }
         
         .create-room-section { margin-bottom: 50px; display: flex; justify-content: center; }
         .create-room-btn { 

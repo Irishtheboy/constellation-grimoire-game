@@ -25,6 +25,52 @@ const GrimoirePage = ({ user, grimoire }) => {
           margin: auto;
           padding: 20px;
           animation: fadeIn 0.8s ease;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        @media (max-width: 768px) {
+          .grimoire-page {
+            padding: 15px;
+            margin: 0;
+            max-width: 100vw;
+            overflow-x: hidden;
+          }
+          
+          .grimoire-nav {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 0;
+            width: 100%;
+          }
+          
+          .nav-btn {
+            font-size: 0.85rem;
+            padding: 14px 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .grimoire-page {
+            padding: 10px;
+            width: 100%;
+          }
+          
+          .grimoire-nav {
+            grid-template-columns: 1fr;
+            gap: 8px;
+            width: 100%;
+          }
+          
+          .nav-btn {
+            font-size: 0.9rem;
+            padding: 16px 12px;
+            width: 100%;
+            box-sizing: border-box;
+          }
         }
 
         @keyframes fadeIn {
@@ -87,21 +133,29 @@ const GrimoirePage = ({ user, grimoire }) => {
         }
 
         .grimoire-nav {
-          display: flex;
-          justify-content: space-evenly;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 15px;
           margin-top: 25px;
+          padding: 0 10px;
         }
 
         .nav-btn {
           background: linear-gradient(135deg, #7b4bff, #5120c7);
           color: white;
-          padding: 12px 22px;
+          padding: 12px 16px;
           border-radius: 18px;
-          font-size: 1.1rem;
+          font-size: 1rem;
           text-decoration: none;
           border: 1px solid #a68cff;
           box-shadow: 0 0 15px rgba(110, 60, 255, 0.6);
           transition: 0.25s ease-in-out;
+          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 44px;
+          box-sizing: border-box;
         }
 
         .nav-btn:hover {
@@ -114,6 +168,23 @@ const GrimoirePage = ({ user, grimoire }) => {
           text-align: center;
           font-size: 1.5rem;
         }
+        
+        .game-credits {
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px solid rgba(109, 71, 255, 0.3);
+        }
+        
+        .game-credits p {
+          color: rgba(212, 179, 255, 0.7);
+          font-size: 0.9rem;
+          font-style: italic;
+          margin: 0;
+        }
+        
+        .game-credits strong {
+          color: #d4b3ff;
+        }
       `}</style>
 
       {/* ===========================
@@ -123,6 +194,9 @@ const GrimoirePage = ({ user, grimoire }) => {
       <div className="grimoire-page">
         <header className="grimoire-header">
           <h1>📜 Your Grimoire</h1>
+          <div className="game-credits">
+            <p>Created by <strong>Franco Lukhele</strong> • <em>Alchemy Studio</em></p>
+          </div>
         </header>
 
         <div className="grimoire-content">
@@ -162,6 +236,7 @@ const GrimoirePage = ({ user, grimoire }) => {
             <Link to="/friends" className="nav-btn">👥 Friends</Link>
             <Link to="/leaderboard" className="nav-btn">🏆 Leaderboard</Link>
             <Link to="/profile" className="nav-btn">👤 Profile</Link>
+            <Link to="/about" className="nav-btn">ℹ️ About</Link>
           </nav>
         </div>
       </div>

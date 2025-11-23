@@ -265,6 +265,24 @@
   border-top: 1px solid rgba(138, 43, 226, 0.3);
 }
 
+.game-credits {
+  text-align: center;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(138, 43, 226, 0.2);
+}
+
+.game-credits p {
+  color: rgba(218, 165, 32, 0.7);
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.game-credits strong {
+  color: #daa520;
+}
+
 .game-preview h3 {
   font-family: 'Cinzel', serif;
   color: #8a2be2;

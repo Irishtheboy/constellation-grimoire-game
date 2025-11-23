@@ -14,7 +14,10 @@ const Header = ({ user, grimoire }) => {
   return (
     <header className="app-header">
       <div className="header-content">
-        <span className="user-info">Welcome, {grimoire?.username || user?.displayName || user?.email}</span>
+        <div className="header-left">
+          <span className="user-info">Welcome, {grimoire?.username || user?.displayName || user?.email}</span>
+          <span className="studio-credit">Alchemy Studio</span>
+        </div>
         <button onClick={handleLogout} className="logout-btn">
           🚪 Logout
         </button>
@@ -45,10 +48,27 @@ const Header = ({ user, grimoire }) => {
           margin: 0 auto;
         }
         
+        .header-left {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        
+        .studio-credit {
+          color: rgba(234, 229, 255, 0.6);
+          font-size: 0.7rem;
+          font-style: italic;
+        }
+        
         @media (max-width: 768px) {
           .header-content {
             flex-wrap: wrap;
             gap: 10px;
+          }
+          
+          .header-left {
+            flex: 1;
+            min-width: 0;
           }
         }
         
