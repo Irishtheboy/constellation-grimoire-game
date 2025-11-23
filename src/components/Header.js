@@ -31,6 +31,12 @@ const Header = ({ user, grimoire }) => {
           backdrop-filter: blur(10px);
         }
         
+        @media (max-width: 768px) {
+          .app-header {
+            padding: 8px 15px;
+          }
+        }
+        
         .header-content {
           display: flex;
           justify-content: space-between;
@@ -39,9 +45,27 @@ const Header = ({ user, grimoire }) => {
           margin: 0 auto;
         }
         
+        @media (max-width: 768px) {
+          .header-content {
+            flex-wrap: wrap;
+            gap: 10px;
+          }
+        }
+        
         .user-info {
           color: #eae5ff;
           font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+          .user-info {
+            font-size: 0.8rem;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
         }
         
         .logout-btn {
@@ -53,6 +77,15 @@ const Header = ({ user, grimoire }) => {
           cursor: pointer;
           font-size: 0.9rem;
           transition: 0.2s ease;
+          min-height: 36px;
+        }
+        
+        @media (max-width: 768px) {
+          .logout-btn {
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            min-height: 40px;
+          }
         }
         
         .logout-btn:hover {

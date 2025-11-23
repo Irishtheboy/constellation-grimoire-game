@@ -291,8 +291,27 @@ const BattlePage = ({ user, grimoire, updateGrimoire }) => {
       </div>
       
       <style>{`
-        .battle-page { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .battle-lobby { padding: 20px 0; }
+        .battle-page { 
+          max-width: 1200px; 
+          margin: 0 auto; 
+          padding: 20px;
+        }
+        
+        @media (max-width: 768px) {
+          .battle-page {
+            padding: 10px;
+            max-width: 100vw;
+          }
+        }
+        .battle-lobby { 
+          padding: 20px 0; 
+        }
+        
+        @media (max-width: 768px) {
+          .battle-lobby {
+            padding: 15px 0;
+          }
+        }
         .lobby-header { text-align: center; margin-bottom: 40px; }
         .lobby-header h2 { color: #d4c4b0; margin-bottom: 10px; }
         .lobby-header p { color: #a09080; }
@@ -310,6 +329,29 @@ const BattlePage = ({ user, grimoire, updateGrimoire }) => {
           cursor: pointer;
           transition: all 0.3s ease;
           min-width: 400px;
+        }
+        
+        @media (max-width: 768px) {
+          .create-room-btn {
+            min-width: auto;
+            width: 100%;
+            padding: 20px 25px;
+            gap: 15px;
+            margin: 0 10px;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .create-room-btn {
+            padding: 18px 20px;
+            gap: 12px;
+            flex-direction: column;
+            text-align: center;
+          }
+          
+          .btn-icon {
+            font-size: 2.5rem !important;
+          }
         }
         .create-room-btn:hover { 
           border-color: rgba(200, 180, 160, 0.6);
@@ -355,6 +397,14 @@ const BattlePage = ({ user, grimoire, updateGrimoire }) => {
           display: grid; 
           grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
           gap: 20px; 
+        }
+        
+        @media (max-width: 768px) {
+          .rooms-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+            padding: 0 10px;
+          }
         }
         .room-card { 
           background: linear-gradient(145deg, rgba(25, 20, 30, 0.9), rgba(15, 12, 20, 0.9));
@@ -488,6 +538,16 @@ const BattlePage = ({ user, grimoire, updateGrimoire }) => {
           cursor: pointer;
           z-index: 1000;
           transition: all 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+          .music-toggle {
+            top: 70px;
+            right: 15px;
+            width: 45px;
+            height: 45px;
+            font-size: 1.3rem;
+          }
         }
         .music-toggle:hover {
           background: rgba(0, 0, 0, 0.9);
@@ -759,8 +819,36 @@ const BattleInterface = ({ roomData, user, grimoire, roomId }) => {
       </div>
       
       <style>{`
-        .battle-interface { padding: 20px; max-width: 800px; margin: 0 auto; }
-        .battle-arena { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; }
+        .battle-interface { 
+          padding: 20px; 
+          max-width: 800px; 
+          margin: 0 auto; 
+        }
+        
+        @media (max-width: 768px) {
+          .battle-interface {
+            padding: 15px 10px;
+            max-width: 100vw;
+          }
+        }
+        .battle-arena { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          margin-bottom: 30px; 
+          background: rgba(0,0,0,0.3); 
+          padding: 20px; 
+          border-radius: 15px; 
+        }
+        
+        @media (max-width: 768px) {
+          .battle-arena {
+            flex-direction: column;
+            gap: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+          }
+        }
         .player-side { display: flex; flex-direction: column; align-items: center; }
         .enemy-side { align-items: flex-end; }
         .character-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #7b4bff, #5120c7); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; overflow: hidden; }
@@ -804,9 +892,39 @@ const BattleInterface = ({ roomData, user, grimoire, roomId }) => {
         .ap-fill { background: #FF9800; height: 100%; border-radius: 10px; transition: width 0.5s; }
         .hp-bar span, .mana-bar span, .ap-bar span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 0.7rem; }
         .turn-indicator { text-align: center; font-size: 1.3rem; margin: 20px 0; }
-        .battle-actions-container { display: flex; gap: 20px; margin: 20px 0; }
+        .battle-actions-container { 
+          display: flex; 
+          gap: 20px; 
+          margin: 20px 0; 
+        }
+        
+        @media (max-width: 768px) {
+          .battle-actions-container {
+            flex-direction: column;
+            gap: 15px;
+            margin: 15px 0;
+          }
+        }
         .spell-selection, .item-selection { flex: 1; }
-        .spell-grid, .item-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+        .spell-grid, .item-grid { 
+          display: grid; 
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+          gap: 10px; 
+        }
+        
+        @media (max-width: 768px) {
+          .spell-grid, .item-grid {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .spell-grid, .item-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+          }
+        }
         .spell-btn, .item-btn { background: linear-gradient(135deg, #7b4bff, #5120c7); border: none; border-radius: 10px; padding: 10px; color: white; cursor: pointer; transition: all 0.3s; }
         .item-btn { background: linear-gradient(135deg, #ff6b35, #f7931e); }
         .spell-btn:hover:not(.disabled), .item-btn:hover:not(.disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(123, 75, 255, 0.4); }
