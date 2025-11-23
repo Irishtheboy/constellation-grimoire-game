@@ -7,7 +7,11 @@ import GrimoirePage from './pages/GrimoirePage';
 import BattlePage from './pages/BattlePage';
 import ShopPage from './pages/ShopPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import ProfilePage from './pages/ProfilePage';
+import SpellsPage from './pages/SpellsPage';
+import AdventureLogPage from './pages/AdventureLogPage';
 import GrimoireCreation from './components/GrimoireCreation';
+import { audioManager } from './utils/audio';
 import './App.css';
 
 function App() {
@@ -17,6 +21,14 @@ function App() {
   const [needsGrimoire, setNeedsGrimoire] = useState(false);
 
   useEffect(() => {
+    // Initialize audio on first user interaction
+    const initAudio = () => {
+      audioManager.init();
+      audioManager.playMusic();
+    };
+    
+    document.addEventListener('click', initAudio, { once: true });
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
@@ -111,6 +123,35 @@ function App() {
           <Route 
             path="/leaderboard" 
             element={<LeaderboardPage user={user} />} 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProfilePage 
+                user={user} 
+                grimoire={grimoire} 
+                updateGrimoire={updateGrimoire}
+              />
+            } 
+          />
+          <Route 
+            path="/spells" 
+            element={
+              <SpellsPage 
+                user={user} 
+                grimoire={grimoire} 
+                updateGrimoire={updateGrimoire}
+              />
+            } 
+          />
+          <Route 
+            path="/adventure-log" 
+            element={
+              <AdventureLogPage 
+                user={user} 
+                grimoire={grimoire}
+              />
+            } 
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

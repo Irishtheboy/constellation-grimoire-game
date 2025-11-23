@@ -1,15 +1,20 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { logoutUser } from '../utils/firebase';
 
-const Header = ({ user }) => {
+const Header = ({ user, grimoire }) => {
+  const navigate = useNavigate();
+  
   const handleLogout = async () => {
     await logoutUser();
+    // Clear browser cache and redirect to home
+    window.location.href = '/';
   };
 
   return (
     <header className="app-header">
       <div className="header-content">
-        <span className="user-info">Welcome, {user?.displayName || user?.email}</span>
+        <span className="user-info">Welcome, {grimoire?.username || user?.displayName || user?.email}</span>
         <button onClick={handleLogout} className="logout-btn">
           🚪 Logout
         </button>

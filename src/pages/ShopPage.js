@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
+import BackButton from '../components/BackButton';
 import { purchaseItem } from '../utils/firebase';
 import { SHOP_ITEMS } from '../data/items';
 
@@ -40,8 +41,9 @@ const ShopPage = ({ user, grimoire, updateGrimoire }) => {
   
   return (
     <>
-      <Header user={user} />
+      <Header user={user} grimoire={grimoire} />
       <div className="shop-page">
+        <BackButton to="/" />
         <div className="shop-header">
           <h1>🏦 Celestial Shop</h1>
           <div className="currency">

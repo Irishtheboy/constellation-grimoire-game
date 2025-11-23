@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
+import BackButton from '../components/BackButton';
 import { getLeaderboard } from '../utils/firebase';
 import { ZODIAC_SIGNS } from '../data/constellations';
 
@@ -85,6 +86,7 @@ const LeaderboardPage = ({ user }) => {
     <>
       <Header user={user} />
       <div className="leaderboard-page">
+        <BackButton to="/" />
         <div className="leaderboard-header">
           <h1>🏆 Leaderboard</h1>
           <p>Top constellation masters across the realm</p>

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createBattleRoom, joinBattleRoom, listenForBattleRooms, makeBattleMove, useItemInBattle } from '../utils/multiplayer';
 import { onSnapshot, doc } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { db, endBattleByAbandon, checkUserBan } from '../utils/firebase';
 import Header from '../components/Header';
+import BackButton from '../components/BackButton';
+import { audioManager } from '../utils/audio';
 
 const BattlePage = ({ user, grimoire, updateGrimoire }) => {
   const [battleRooms, setBattleRooms] = useState([]);
@@ -61,9 +63,27 @@ const BattlePage = ({ user, grimoire, updateGrimoire }) => {
     <>
       <Header user={user} />
       <div className="battle-page">
+        <BackButton 
+          to="/" 
+          warningMessage={roomData?.status === 'active' ? 'Leaving an active battle will give you a strike and end the match. Are you sure?' : null}
+          onBack={async () => {
+            if (roomData?.status === 'active') {
+              const result = await endBattleByAbandon(currentRoom, user.uid);
+              if (result.success) {
+                if (result.banned) {
+                  alert(`Strike ${result.strikes}/3! You have been banned for 2 days!`);
+                } else {
+                  alert(`Strike ${result.strikes}/3 for abandoning battle. 3 strikes = 2 day ban!`);
+                }
+              }
+            }
+            setCurrentRoom(null);
+            setRoomData(null);
+            window.location.href = '/';
+          }}
+        />
         <header>
           <h1>⚔️ Battle Arena</h1>
-          <Link to="/" className="back-btn">← Back to Grimoire</Link>
         </header>
 
       {!currentRoom ? (
@@ -123,7 +143,24 @@ const BattlePage = ({ user, grimoire, updateGrimoire }) => {
           ) : (
             <p>Loading room...</p>
           )}
-          <button onClick={() => { setCurrentRoom(null); setRoomData(null); }}>Leave Room</button>
+          <button 
+            onClick={async () => {
+              if (roomData?.status === 'active') {
+                const result = await endBattleByAbandon(currentRoom, user.uid);
+                if (result.success) {
+                  if (result.banned) {
+                    alert(`Strike ${result.strikes}/3! You have been banned for 2 days!`);
+                  } else {
+                    alert(`Strike ${result.strikes}/3 for abandoning battle. 3 strikes = 2 day ban!`);
+                  }
+                }
+              }
+              setCurrentRoom(null); 
+              setRoomData(null);
+            }}
+          >
+            Leave Room
+          </button>
         </div>
       )}
       </div>
@@ -153,9 +190,9 @@ const BattleInterface = ({ roomData, user, grimoire, roomId }) => {
   const [items, setItems] = useState({});
   
   useEffect(() => {
-    import('../data/spells').then(({ SPELLS, CONSTELLATION_SPELLS }) => {
+    import('../data/spells').then(({ SPELLS, getDefaultSpellLoadout }) => {
       setSpells(SPELLS);
-      const mySpells = CONSTELLATION_SPELLS[grimoire.constellation] || ['PHYSICAL_STRIKE'];
+      const mySpells = grimoire.spellLoadout || getDefaultSpellLoadout(grimoire.constellation, grimoire.level);
       setAvailableSpells(mySpells);
     });
     
@@ -177,6 +214,7 @@ const BattleInterface = ({ roomData, user, grimoire, roomId }) => {
     const spell = spells[spellId];
     if (!spell || myMana < spell.manaCost || myAP < spell.actionCost) return;
     
+    audioManager.playSound(spell.animation);
     await makeBattleMove(roomId, user.uid, spellId, grimoire);
     setSelectedSpell(null);
   };
@@ -186,6 +224,7 @@ const BattleInterface = ({ roomData, user, grimoire, roomId }) => {
     const item = items[itemId.toUpperCase()] || items[itemId];
     if (!item || !myInventory[itemId] || myInventory[itemId] <= 0 || myAP < item.actionCost) return;
     
+    audioManager.playSound('potion');
     await useItemInBattle(roomId, user.uid, itemId);
   };
   
@@ -248,7 +287,7 @@ const BattleInterface = ({ roomData, user, grimoire, roomId }) => {
             {availableSpells.map(spellId => {
               const spell = spells[spellId];
               if (!spell) return null;
-              const canCast = myMana >= spell.manaCost && myAP >= spell.actionCost && isMyTurn;
+              const canCast = myMana >= spell.manaCost && myAP >= spell.actionCost && isMyTurn && (grimoire.level >= spell.levelRequired);
               
               return (
                 <button

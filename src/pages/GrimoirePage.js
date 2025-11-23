@@ -119,7 +119,7 @@ const GrimoirePage = ({ user, grimoire }) => {
       {/* ===========================
               Page Content
          =========================== */}
-      <Header user={user} />
+      <Header user={user} grimoire={grimoire} />
       <div className="grimoire-page">
         <header className="grimoire-header">
           <h1>📜 Your Grimoire</h1>
@@ -156,8 +156,11 @@ const GrimoirePage = ({ user, grimoire }) => {
 
           <nav className="grimoire-nav">
             <Link to="/battle" className="nav-btn">⚔️ Battle</Link>
+            <Link to="/spells" className="nav-btn">🔮 Spells</Link>
             <Link to="/shop" className="nav-btn">🛒 Shop</Link>
+            <Link to="/adventure-log" className="nav-btn">📜 Chronicle</Link>
             <Link to="/leaderboard" className="nav-btn">🏆 Leaderboard</Link>
+            <Link to="/profile" className="nav-btn">👤 Profile</Link>
           </nav>
         </div>
       </div>

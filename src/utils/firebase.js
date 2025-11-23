@@ -97,6 +97,7 @@ export const registerUser = async (email, password, userData) => {
     // Create user profile in Firestore
     await setDoc(doc(db, 'users', user.uid), {
       email: user.email,
+      username: userData.username || user.email.split('@')[0],
       ...userData,
       createdAt: new Date().toISOString()
     });
@@ -167,7 +168,7 @@ export const updateGrimoire = async (userId, updates) => {
 };
 
 // Battle functions
-export const recordBattleResult = async (userId, result, sparksEarned, expEarned) => {
+export const recordBattleResult = async (userId, result, sparksEarned, expEarned, battleData = {}) => {
   try {
     const grimoire = await getUserGrimoire(userId);
     if (!grimoire.success) return grimoire;
@@ -202,6 +203,30 @@ export const recordBattleResult = async (userId, result, sparksEarned, expEarned
         magic: grimoire.grimoire.stats.magic + statBoost,
         speed: grimoire.grimoire.stats.speed + statBoost
       };
+    }
+    
+    // Generate and save story entry
+    const { generateBattleStory, generateLevelUpStory } = await import('./storyGenerator');
+    
+    const playerData = {
+      constellation: grimoire.grimoire.constellation,
+      level: grimoire.grimoire.level,
+      battleStats: newStats
+    };
+    
+    const battleResult = {
+      result,
+      spellsUsed: battleData.spellsUsed || [],
+      itemsUsed: battleData.itemsUsed || []
+    };
+    
+    const storyEntry = generateBattleStory(playerData, battleResult, battleData.opponent);
+    await addStoryEntry(userId, storyEntry);
+    
+    // Generate level up story if leveled up
+    if (leveledUp) {
+      const levelUpStory = generateLevelUpStory(playerData, newLevel);
+      await addStoryEntry(userId, levelUpStory);
     }
     
     return await updateGrimoire(userId, updates);
@@ -281,3 +306,186 @@ export const purchaseItem = async (userId, itemId, cost) => {
 
 // Legacy function for compatibility
 export const purchaseCard = purchaseItem;
+
+// Adventure Log functions
+export const addStoryEntry = async (userId, storyEntry) => {
+  try {
+    const docRef = doc(db, 'adventureLogs', userId);
+    const docSnap = await getDoc(docRef);
+    
+    let currentEntries = [];
+    if (docSnap.exists()) {
+      currentEntries = docSnap.data().entries || [];
+    }
+    
+    const newEntries = [storyEntry, ...currentEntries].slice(0, 50); // Keep last 50 entries
+    
+    await setDoc(docRef, {
+      userId,
+      entries: newEntries,
+      lastUpdated: new Date().toISOString()
+    });
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const getAdventureLog = async (userId) => {
+  try {
+    const docRef = doc(db, 'adventureLogs', userId);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return { success: true, log: docSnap.data() };
+    } else {
+      return { success: true, log: { entries: [] } };
+    }
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+// Battle penalty functions
+export const applyBattleStrike = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.exists() ? userSnap.data() : {};
+    
+    const currentStrikes = userData.battleStrikes || 0;
+    const newStrikes = currentStrikes + 1;
+    
+    let updates = {
+      battleStrikes: newStrikes,
+      lastStrikeDate: new Date().toISOString()
+    };
+    
+    // 3 strikes = 2 day ban
+    if (newStrikes >= 3) {
+      const banUntil = new Date();
+      banUntil.setDate(banUntil.getDate() + 2);
+      updates.bannedUntil = banUntil.toISOString();
+      updates.battleStrikes = 0; // Reset strikes after ban
+    }
+    
+    await updateDoc(userRef, updates);
+    return { success: true, strikes: newStrikes, banned: newStrikes >= 3 };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const endBattleByAbandon = async (roomId, abandonedUserId) => {
+  try {
+    const roomRef = doc(db, 'battleRooms', roomId);
+    const roomSnap = await getDoc(roomRef);
+    
+    if (!roomSnap.exists()) return { success: false, error: 'Room not found' };
+    
+    const roomData = roomSnap.data();
+    const isHostAbandoned = roomData.hostUserId === abandonedUserId;
+    const winner = isHostAbandoned ? 'opponent' : 'host';
+    const winnerId = isHostAbandoned ? roomData.opponentUserId : roomData.hostUserId;
+    const loserId = abandonedUserId;
+    
+    // End the battle
+    await updateDoc(roomRef, {
+      status: 'completed',
+      winner: winner,
+      endReason: 'abandonment',
+      battleLog: [...(roomData.battleLog || []), `Battle ended - ${isHostAbandoned ? roomData.hostGrimoire.constellation : roomData.opponentGrimoire.constellation} abandoned the match`]
+    });
+    
+    // Apply strike to abandoner
+    const strikeResult = await applyBattleStrike(loserId);
+    
+    // Award win to remaining player
+    if (winnerId) {
+      await recordBattleResult(winnerId, 'win', 75, 150); // Bonus rewards for opponent abandoning
+    }
+    
+    // Record loss for abandoner
+    await recordBattleResult(loserId, 'loss', 0, 0); // No rewards for abandoning
+    
+    return { success: true, strikes: strikeResult.strikes, banned: strikeResult.banned };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+// Legacy function - now applies strike instead of immediate ban
+export const applyBattlePenalty = async (userId) => {
+  return await applyBattleStrike(userId);
+};
+
+export const getUserStrikes = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      return { 
+        success: true, 
+        strikes: userData.battleStrikes || 0,
+        lastStrike: userData.lastStrikeDate
+      };
+    }
+    
+    return { success: true, strikes: 0 };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const checkUserBan = async (userId) => {
+  try {
+    const docRef = doc(db, 'users', userId);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      const userData = docSnap.data();
+      if (userData.bannedUntil) {
+        const banDate = new Date(userData.bannedUntil);
+        const now = new Date();
+        
+        if (now < banDate) {
+          return { 
+            banned: true, 
+            until: banDate,
+            strikes: userData.battleStrikes || 0
+          };
+        }
+      }
+      
+      return { 
+        banned: false, 
+        strikes: userData.battleStrikes || 0 
+      };
+    }
+    
+    return { banned: false, strikes: 0 };
+  } catch (error) {
+    return { banned: false, error: error.message };
+  }
+};
+
+// Profile functions
+export const updateUserProfile = async (userId, profileData) => {
+  try {
+    const docRef = doc(db, 'users', userId);
+    await updateDoc(docRef, profileData);
+    
+    // Also update grimoire with username
+    if (profileData.username) {
+      const grimoireRef = doc(db, 'grimoires', userId);
+      await updateDoc(grimoireRef, { username: profileData.username, profileImage: profileData.profileImage });
+    }
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};

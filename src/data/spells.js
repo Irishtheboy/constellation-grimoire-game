@@ -1,48 +1,52 @@
 export const SPELLS = {
   // Basic Attacks
-  PHYSICAL_STRIKE: {
-    name: 'Physical Strike',
+  ASTRAL_STRIKE: {
+    name: 'Astral Strike',
     type: 'attack',
     baseDamage: 1.0,
     statMultiplier: 'attack',
     manaCost: 0,
     actionCost: 1,
+    levelRequired: 1,
     animation: 'slash',
-    description: 'A basic physical attack'
+    description: 'Channel celestial energy into a basic attack'
   },
   
   // Elemental Spells
-  FIRE_BOLT: {
-    name: 'Fire Bolt',
+  PHOENIX_FLAME: {
+    name: 'Phoenix Flame',
     type: 'attack',
     baseDamage: 1.2,
     statMultiplier: 'magic',
     manaCost: 10,
     actionCost: 1,
+    levelRequired: 1,
     animation: 'fire',
-    description: 'Launches a bolt of fire'
+    description: 'Summon flames of the eternal phoenix'
   },
   
-  ICE_SHARD: {
-    name: 'Ice Shard',
+  GLACIAL_SHARD: {
+    name: 'Glacial Shard',
     type: 'attack',
     baseDamage: 1.1,
     statMultiplier: 'magic',
     manaCost: 8,
     actionCost: 1,
+    levelRequired: 1,
     animation: 'ice',
-    description: 'Fires sharp ice projectiles'
+    description: 'Launch razor-sharp ice from frozen realms'
   },
   
-  LIGHTNING_STRIKE: {
-    name: 'Lightning Strike',
+  THUNDEROUS_WRATH: {
+    name: 'Thunderous Wrath',
     type: 'attack',
     baseDamage: 1.3,
     statMultiplier: 'magic',
     manaCost: 12,
     actionCost: 2,
+    levelRequired: 3,
     animation: 'lightning',
-    description: 'Calls down lightning'
+    description: 'Call upon the fury of storm gods'
   },
   
   // Special Abilities
@@ -84,16 +88,24 @@ export const SPELLS = {
 };
 
 export const CONSTELLATION_SPELLS = {
-  ARIES: ['PHYSICAL_STRIKE', 'FIRE_BOLT', 'LIGHTNING_STRIKE'],
-  TAURUS: ['PHYSICAL_STRIKE', 'SHIELD_BARRIER', 'ICE_SHARD'],
-  GEMINI: ['CURSED_WIND', 'LIGHTNING_STRIKE', 'ICE_SHARD'],
-  CANCER: ['HEALING_LIGHT', 'SHIELD_BARRIER', 'ICE_SHARD'],
-  LEO: ['FIRE_BOLT', 'LIGHTNING_STRIKE', 'PHYSICAL_STRIKE'],
+  ARIES: ['ASTRAL_STRIKE', 'PHOENIX_FLAME', 'THUNDEROUS_WRATH'],
+  TAURUS: ['ASTRAL_STRIKE', 'SHIELD_BARRIER', 'GLACIAL_SHARD'],
+  GEMINI: ['CURSED_WIND', 'THUNDEROUS_WRATH', 'GLACIAL_SHARD'],
+  CANCER: ['HEALING_LIGHT', 'SHIELD_BARRIER', 'GLACIAL_SHARD'],
+  LEO: ['PHOENIX_FLAME', 'THUNDEROUS_WRATH', 'ASTRAL_STRIKE'],
   VIRGO: ['HEALING_LIGHT', 'CURSED_WIND', 'SHIELD_BARRIER'],
-  LIBRA: ['SHIELD_BARRIER', 'HEALING_LIGHT', 'ICE_SHARD'],
-  SCORPIO: ['CURSED_WIND', 'FIRE_BOLT', 'LIGHTNING_STRIKE'],
-  SAGITTARIUS: ['LIGHTNING_STRIKE', 'FIRE_BOLT', 'PHYSICAL_STRIKE'],
-  CAPRICORN: ['SHIELD_BARRIER', 'ICE_SHARD', 'PHYSICAL_STRIKE'],
-  AQUARIUS: ['CURSED_WIND', 'LIGHTNING_STRIKE', 'HEALING_LIGHT'],
-  PISCES: ['HEALING_LIGHT', 'ICE_SHARD', 'CURSED_WIND']
+  LIBRA: ['SHIELD_BARRIER', 'HEALING_LIGHT', 'GLACIAL_SHARD'],
+  SCORPIO: ['CURSED_WIND', 'PHOENIX_FLAME', 'THUNDEROUS_WRATH'],
+  SAGITTARIUS: ['THUNDEROUS_WRATH', 'PHOENIX_FLAME', 'ASTRAL_STRIKE'],
+  CAPRICORN: ['SHIELD_BARRIER', 'GLACIAL_SHARD', 'ASTRAL_STRIKE'],
+  AQUARIUS: ['CURSED_WIND', 'THUNDEROUS_WRATH', 'HEALING_LIGHT'],
+  PISCES: ['HEALING_LIGHT', 'GLACIAL_SHARD', 'CURSED_WIND']
+};
+
+export const getDefaultSpellLoadout = (constellation, level) => {
+  const availableSpells = CONSTELLATION_SPELLS[constellation] || [];
+  return availableSpells.filter(spellId => {
+    const spell = SPELLS[spellId];
+    return spell && spell.levelRequired <= level;
+  }).slice(0, 3);
 };
