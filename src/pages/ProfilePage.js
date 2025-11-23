@@ -17,8 +17,46 @@ const ProfilePage = ({ user, grimoire, updateGrimoire }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image too large. Please choose an image under 5MB.');
+        return;
+      }
+      
       const reader = new FileReader();
-      reader.onload = (e) => setProfileImage(e.target.result);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Resize to max 300x300
+          const maxSize = 300;
+          let { width, height } = img;
+          
+          if (width > height) {
+            if (width > maxSize) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Compress to JPEG with 0.7 quality
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setProfileImage(compressedDataUrl);
+        };
+        img.src = e.target.result;
+      };
       reader.readAsDataURL(file);
     }
   };

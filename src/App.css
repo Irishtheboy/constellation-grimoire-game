@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Trajan+Pro:wght@400;700&family=Cinzel:wght@400;600;700&family=Spectral:ital,wght@0,300;0,400;0,600;1,400&display=swap');
 
 * {
   margin: 0;
@@ -7,11 +7,15 @@
 }
 
 body {
-  font-family: 'Crimson Text', serif;
-  background: radial-gradient(ellipse at center, #0a0a2e 0%, #16213e 50%, #0f1419 100%);
-  color: #daa520;
+  font-family: 'Spectral', serif;
+  background: 
+    radial-gradient(ellipse at 30% 20%, rgba(15, 15, 25, 0.9) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(25, 20, 35, 0.8) 0%, transparent 50%),
+    linear-gradient(180deg, #0a0a0f 0%, #151520 30%, #0f0f18 70%, #050508 100%);
+  color: #e8e3d3;
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
 }
 
 body::before {
@@ -22,22 +26,80 @@ body::before {
   width: 100%;
   height: 100%;
   background-image: 
-    radial-gradient(circle at 20% 80%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(75, 0, 130, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(25, 25, 112, 0.05) 0%, transparent 50%);
+    radial-gradient(circle at 15% 25%, rgba(100, 80, 120, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 85% 75%, rgba(80, 60, 100, 0.02) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(60, 50, 80, 0.01) 0%, transparent 60%);
   pointer-events: none;
-  z-index: -1;
-  animation: cosmicDrift 20s ease-in-out infinite alternate;
+  z-index: -2;
+  animation: voidDrift 30s ease-in-out infinite alternate;
 }
 
-@keyframes cosmicDrift {
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(100, 80, 120, 0.005) 2px,
+      rgba(100, 80, 120, 0.005) 4px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(80, 60, 100, 0.003) 2px,
+      rgba(80, 60, 100, 0.003) 4px
+    );
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.3;
+}
+
+@keyframes voidDrift {
   0% { 
-    transform: translateX(-10px) translateY(-10px);
-    opacity: 0.3;
+    transform: translateX(-5px) translateY(-8px) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateX(8px) translateY(-3px) scale(1.02);
+    opacity: 0.4;
   }
   100% { 
-    transform: translateX(10px) translateY(10px);
-    opacity: 0.7;
+    transform: translateX(-3px) translateY(5px) scale(0.98);
+    opacity: 0.1;
+  }
+}
+
+@keyframes soulPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 5px rgba(200, 180, 160, 0.2),
+      inset 0 0 10px rgba(150, 130, 110, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 15px rgba(200, 180, 160, 0.4),
+      inset 0 0 20px rgba(150, 130, 110, 0.2);
+  }
+}
+
+@keyframes voidGlow {
+  0%, 100% {
+    text-shadow: 
+      0 0 5px rgba(200, 180, 160, 0.3),
+      0 0 10px rgba(150, 130, 110, 0.2);
+  }
+  50% {
+    text-shadow: 
+      0 0 10px rgba(200, 180, 160, 0.5),
+      0 0 20px rgba(150, 130, 110, 0.3),
+      0 0 30px rgba(100, 80, 60, 0.1);
   }
 }
 
@@ -52,102 +114,141 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at center, #0a0a2e 0%, #16213e 50%, #0f1419 100%);
+  background: 
+    linear-gradient(180deg, #0a0a0f 0%, #151520 30%, #0f0f18 70%, #050508 100%);
 }
 
 .loading-content {
   text-align: center;
-  color: #daa520;
+  color: #d4c4b0;
+  padding: 40px;
+  background: 
+    linear-gradient(145deg, rgba(25, 20, 30, 0.8), rgba(15, 12, 20, 0.8));
+  border: 1px solid rgba(100, 80, 90, 0.2);
+  border-radius: 3px;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(150, 130, 110, 0.1);
 }
 
 .constellation-spinner {
-  font-size: 4rem;
-  animation: spin 2s linear infinite;
+  font-size: 3.5rem;
+  animation: voidSpin 3s ease-in-out infinite;
   margin-bottom: 20px;
-  filter: drop-shadow(0 0 20px rgba(218, 165, 32, 0.6));
+  filter: drop-shadow(0 0 15px rgba(200, 180, 160, 0.3));
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@keyframes voidSpin {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.7; }
+  50% { transform: rotate(180deg) scale(1.1); opacity: 1; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.7; }
 }
 
 .loading-content h2 {
-  font-family: 'Cinzel', serif;
-  font-size: 2rem;
+  font-family: 'Trajan Pro', 'Cinzel', serif;
+  font-size: 1.8rem;
   margin-bottom: 10px;
-  text-shadow: 0 0 15px rgba(218, 165, 32, 0.5);
+  animation: voidGlow 2s ease-in-out infinite;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .loading-content p {
   font-style: italic;
-  color: rgba(218, 165, 32, 0.8);
-  font-size: 1.1rem;
+  color: rgba(180, 160, 140, 0.8);
+  font-size: 1rem;
+  font-weight: 300;
 }
 
-/* Global button styles */
+/* Global button styles - Hollow Knight inspired */
 .btn {
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.8), rgba(75, 0, 130, 0.8));
-  border: 2px solid rgba(218, 165, 32, 0.5);
-  border-radius: 20px;
-  padding: 12px 24px;
-  color: #daa520;
+  background: 
+    linear-gradient(145deg, rgba(40, 35, 50, 0.9), rgba(25, 20, 35, 0.9)),
+    linear-gradient(45deg, rgba(100, 80, 120, 0.1), rgba(80, 60, 100, 0.1));
+  border: 1px solid rgba(150, 130, 110, 0.3);
+  border-radius: 2px;
+  padding: 10px 20px;
+  color: #c8b4a0;
   font-family: 'Cinzel', serif;
-  font-weight: 600;
+  font-weight: 400;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   text-decoration: none;
   display: inline-block;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(200, 180, 160, 0.1), transparent);
+  transition: left 0.5s ease;
 }
 
 .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
-  border-color: #daa520;
+  transform: translateY(-1px);
+  border-color: rgba(200, 180, 160, 0.6);
+  color: #e8d4c0;
+  animation: soulPulse 2s ease-in-out infinite;
+}
+
+.btn:hover::before {
+  left: 100%;
 }
 
 .btn.primary {
-  background: linear-gradient(135deg, rgba(218, 165, 32, 0.8), rgba(255, 215, 0, 0.6));
-  color: #000;
-}
-
-.btn.primary:hover {
-  box-shadow: 0 5px 15px rgba(218, 165, 32, 0.4);
+  background: 
+    linear-gradient(145deg, rgba(60, 50, 40, 0.9), rgba(45, 35, 25, 0.9));
+  border-color: rgba(200, 180, 160, 0.5);
+  color: #f0e6d2;
 }
 
 .btn.secondary {
-  background: linear-gradient(135deg, rgba(75, 0, 130, 0.6), rgba(25, 25, 112, 0.6));
+  background: 
+    linear-gradient(145deg, rgba(30, 25, 40, 0.8), rgba(20, 15, 30, 0.8));
+  border-color: rgba(120, 100, 140, 0.4);
 }
 
 .btn.danger {
-  background: linear-gradient(135deg, rgba(139, 0, 0, 0.8), rgba(75, 0, 0, 0.8));
-  color: #ff6b6b;
-}
-
-.btn.danger:hover {
-  box-shadow: 0 5px 15px rgba(139, 0, 0, 0.4);
+  background: 
+    linear-gradient(145deg, rgba(60, 30, 30, 0.9), rgba(40, 20, 20, 0.9));
+  border-color: rgba(180, 100, 100, 0.4);
+  color: #d4a4a4;
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  animation: none;
 }
 
 .btn:disabled:hover {
   transform: none;
-  box-shadow: none;
+  border-color: rgba(150, 130, 110, 0.3);
+  color: #c8b4a0;
 }
 
-/* Global card styles */
+/* Global card styles - Hollow Knight stone tablet aesthetic */
 .card {
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(25, 25, 112, 0.3));
-  border: 2px solid rgba(138, 43, 226, 0.4);
-  border-radius: 15px;
+  background: 
+    linear-gradient(145deg, rgba(25, 20, 30, 0.95), rgba(15, 12, 20, 0.95)),
+    linear-gradient(45deg, rgba(40, 35, 45, 0.1), rgba(30, 25, 35, 0.1));
+  border: 1px solid rgba(100, 80, 90, 0.3);
+  border-radius: 3px;
   padding: 20px;
   box-shadow: 
-    0 0 30px rgba(138, 43, 226, 0.2),
-    inset 0 0 30px rgba(75, 0, 130, 0.1);
+    0 2px 8px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(150, 130, 110, 0.1),
+    inset 0 -1px 0 rgba(50, 40, 30, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -155,24 +256,31 @@ body::before {
 .card::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, transparent 70%);
-  animation: cardAura 6s ease-in-out infinite;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      rgba(100, 80, 90, 0.02) 20px,
+      rgba(100, 80, 90, 0.02) 21px
+    );
   pointer-events: none;
+  z-index: 0;
 }
 
-@keyframes cardAura {
-  0%, 100% { 
-    opacity: 0.3; 
-    transform: rotate(0deg);
-  }
-  50% { 
-    opacity: 0.7; 
-    transform: rotate(180deg);
-  }
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(150, 130, 110, 0.2), transparent);
+  pointer-events: none;
 }
 
 .card-content {
@@ -180,70 +288,98 @@ body::before {
   z-index: 1;
 }
 
-/* Typography */
+/* Typography - Ancient stone inscription style */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Cinzel', serif;
-  color: #daa520;
+  font-family: 'Trajan Pro', 'Cinzel', serif;
+  color: #d4c4b0;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 h1 {
-  font-size: 2.5rem;
-  text-shadow: 0 0 15px rgba(218, 165, 32, 0.5);
+  font-size: 2.2rem;
+  animation: voidGlow 3s ease-in-out infinite;
+  margin-bottom: 1rem;
 }
 
 h2 {
-  font-size: 2rem;
-  text-shadow: 0 0 10px rgba(218, 165, 32, 0.4);
+  font-size: 1.8rem;
+  text-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.8),
+    0 0 5px rgba(200, 180, 160, 0.2);
+  margin-bottom: 0.8rem;
 }
 
 h3 {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
+  color: #c0b0a0;
+  margin-bottom: 0.6rem;
 }
 
 p {
-  line-height: 1.6;
-  color: rgba(218, 165, 32, 0.9);
+  line-height: 1.7;
+  color: #b8a898;
+  font-weight: 300;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* Form elements */
+.ancient-text {
+  font-family: 'Spectral', serif;
+  font-style: italic;
+  color: #a09080;
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+
+/* Form elements - Ancient stone carving style */
 input, select, textarea {
-  background: rgba(0, 0, 0, 0.7);
-  border: 2px solid rgba(138, 43, 226, 0.4);
-  border-radius: 8px;
-  padding: 12px 16px;
-  color: #daa520;
-  font-family: 'Crimson Text', serif;
-  font-size: 1rem;
+  background: 
+    linear-gradient(145deg, rgba(20, 15, 25, 0.9), rgba(15, 10, 20, 0.9));
+  border: 1px solid rgba(100, 80, 90, 0.4);
+  border-radius: 2px;
+  padding: 10px 14px;
+  color: #c8b4a0;
+  font-family: 'Spectral', serif;
+  font-size: 0.95rem;
+  box-shadow: 
+    inset 0 1px 3px rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(150, 130, 110, 0.1);
 }
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: #8a2be2;
-  box-shadow: 0 0 15px rgba(138, 43, 226, 0.4);
+  border-color: rgba(150, 130, 110, 0.6);
+  box-shadow: 
+    inset 0 1px 3px rgba(0, 0, 0, 0.6),
+    0 0 8px rgba(150, 130, 110, 0.2);
+  color: #d4c4b0;
 }
 
 input::placeholder, textarea::placeholder {
-  color: rgba(218, 165, 32, 0.5);
+  color: rgba(150, 130, 110, 0.4);
   font-style: italic;
+  font-weight: 300;
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling - Void essence */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
+  background: rgba(15, 10, 20, 0.8);
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.6), rgba(75, 0, 130, 0.6));
-  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(100, 80, 90, 0.6), rgba(80, 60, 70, 0.6));
+  border-radius: 0;
+  border: 1px solid rgba(50, 40, 30, 0.3);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.8), rgba(75, 0, 130, 0.8));
+  background: linear-gradient(180deg, rgba(120, 100, 110, 0.8), rgba(100, 80, 90, 0.8));
 }
 
 /* Utility classes */

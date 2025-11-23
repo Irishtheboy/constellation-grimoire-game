@@ -10,6 +10,7 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
 import SpellsPage from './pages/SpellsPage';
 import AdventureLogPage from './pages/AdventureLogPage';
+import FriendsPage from './pages/FriendsPage';
 import GrimoireCreation from './components/GrimoireCreation';
 import { audioManager } from './utils/audio';
 import './App.css';
@@ -148,6 +149,15 @@ function App() {
             path="/adventure-log" 
             element={
               <AdventureLogPage 
+                user={user} 
+                grimoire={grimoire}
+              />
+            } 
+          />
+          <Route 
+            path="/friends" 
+            element={
+              <FriendsPage 
                 user={user} 
                 grimoire={grimoire}
               />

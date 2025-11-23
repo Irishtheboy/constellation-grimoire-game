@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { ZODIAC_SIGNS } from '../data/constellations';
 
 // Firebase configuration
@@ -18,6 +18,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export { getDoc };
 
 // Utility function to determine zodiac sign from birth date
 export const getZodiacSign = (birthMonth, birthDay) => {
@@ -211,7 +212,8 @@ export const recordBattleResult = async (userId, result, sparksEarned, expEarned
     const playerData = {
       constellation: grimoire.grimoire.constellation,
       level: grimoire.grimoire.level,
-      battleStats: newStats
+      battleStats: newStats,
+      username: grimoire.grimoire.username
     };
     
     const battleResult = {
@@ -472,16 +474,422 @@ export const checkUserBan = async (userId) => {
   }
 };
 
+// Friends system functions
+export const sendFriendRequest = async (fromUserId, toUsername) => {
+  try {
+    // Find user by username
+    const usersQuery = query(collection(db, 'users'), where('username', '==', toUsername));
+    const usersSnapshot = await getDocs(usersQuery);
+    
+    if (usersSnapshot.empty) {
+      return { success: false, error: 'User not found' };
+    }
+    
+    const toUserId = usersSnapshot.docs[0].id;
+    
+    // Prevent self-friend requests
+    if (fromUserId === toUserId) {
+      return { success: false, error: 'Cannot send friend request to yourself' };
+    }
+    
+    // Check if request already exists
+    const requestRef = doc(db, 'friendRequests', `${fromUserId}_${toUserId}`);
+    const requestSnap = await getDoc(requestRef);
+    
+    if (requestSnap.exists()) {
+      return { success: false, error: 'Friend request already sent' };
+    }
+    
+    // Check if they're already friends
+    const fromUserRef = doc(db, 'users', fromUserId);
+    const fromUserSnap = await getDoc(fromUserRef);
+    const friends = fromUserSnap.data()?.friends || [];
+    
+    if (friends.includes(toUserId)) {
+      return { success: false, error: 'Already friends with this user' };
+    }
+    
+    // Create friend request
+    await setDoc(requestRef, {
+      fromUserId,
+      toUserId,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    });
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const acceptFriendRequest = async (fromUserId, toUserId) => {
+  try {
+    // Update request status
+    await updateDoc(doc(db, 'friendRequests', `${fromUserId}_${toUserId}`), {
+      status: 'accepted',
+      acceptedAt: new Date().toISOString()
+    });
+    
+    // Add to both users' friends lists
+    const fromUserRef = doc(db, 'users', fromUserId);
+    const toUserRef = doc(db, 'users', toUserId);
+    
+    const fromUserSnap = await getDoc(fromUserRef);
+    const toUserSnap = await getDoc(toUserRef);
+    
+    const fromUserFriends = fromUserSnap.data()?.friends || [];
+    const toUserFriends = toUserSnap.data()?.friends || [];
+    
+    await updateDoc(fromUserRef, { friends: [...fromUserFriends, toUserId] });
+    await updateDoc(toUserRef, { friends: [...toUserFriends, fromUserId] });
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const rejectFriendRequest = async (fromUserId, toUserId) => {
+  try {
+    await updateDoc(doc(db, 'friendRequests', `${fromUserId}_${toUserId}`), {
+      status: 'rejected',
+      rejectedAt: new Date().toISOString()
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+// Chat functions
+export const sendMessage = async (chatId, userId, message) => {
+  try {
+    const chatRef = doc(db, 'chats', chatId);
+    const chatSnap = await getDoc(chatRef);
+    
+    const newMessage = {
+      userId,
+      message,
+      timestamp: new Date().toISOString()
+    };
+    
+    if (chatSnap.exists()) {
+      const messages = chatSnap.data().messages || [];
+      await updateDoc(chatRef, {
+        messages: [...messages, newMessage],
+        lastMessage: new Date().toISOString()
+      });
+    } else {
+      await setDoc(chatRef, {
+        messages: [newMessage],
+        createdAt: new Date().toISOString(),
+        lastMessage: new Date().toISOString()
+      });
+    }
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const getMessages = async (chatId) => {
+  try {
+    const chatRef = doc(db, 'chats', chatId);
+    const chatSnap = await getDoc(chatRef);
+    
+    if (chatSnap.exists()) {
+      return { success: true, messages: chatSnap.data().messages || [] };
+    }
+    
+    return { success: true, messages: [] };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+// Friendly duel functions
+export const createFriendlyDuel = async (challengerId, opponentId, chatMessages = []) => {
+  try {
+    const duelId = `${challengerId}_${opponentId}_${Date.now()}`;
+    
+    const challengerGrimoire = await getUserGrimoire(challengerId);
+    const opponentGrimoire = await getUserGrimoire(opponentId);
+    
+    if (!challengerGrimoire.success || !opponentGrimoire.success) {
+      return { success: false, error: 'Could not load grimoires' };
+    }
+    
+    await setDoc(doc(db, 'friendlyDuels', duelId), {
+      challengerId,
+      opponentId,
+      status: 'pending',
+      challengerGrimoire: challengerGrimoire.grimoire,
+      opponentGrimoire: opponentGrimoire.grimoire,
+      chatLog: chatMessages,
+      createdAt: new Date().toISOString()
+    });
+    
+    return { success: true, duelId };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const acceptDuel = async (duelId) => {
+  try {
+    await updateDoc(doc(db, 'friendlyDuels', duelId), {
+      status: 'active',
+      startedAt: new Date().toISOString()
+    });
+    return { success: true, duelId };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const completeDuel = async (duelId, winnerId, duelEvents) => {
+  try {
+    const duelRef = doc(db, 'friendlyDuels', duelId);
+    const duelSnap = await getDoc(duelRef);
+    
+    if (!duelSnap.exists()) {
+      return { success: false, error: 'Duel not found' };
+    }
+    
+    const duelData = duelSnap.data();
+    const loserId = winnerId === duelData.challengerId ? duelData.opponentId : duelData.challengerId;
+    
+    await updateDoc(duelRef, {
+      status: 'completed',
+      winnerId,
+      loserId,
+      duelEvents,
+      completedAt: new Date().toISOString()
+    });
+    
+    // Generate AI story for both players
+    const { generateFriendlyDuelStory } = await import('./storyGenerator');
+    
+    const winnerGrimoire = winnerId === duelData.challengerId ? duelData.challengerGrimoire : duelData.opponentGrimoire;
+    const loserGrimoire = winnerId === duelData.challengerId ? duelData.opponentGrimoire : duelData.challengerGrimoire;
+    
+    const duelStory = generateFriendlyDuelStory({
+      winner: { ...winnerGrimoire, userId: winnerId },
+      loser: { ...loserGrimoire, userId: loserId },
+      chatLog: duelData.chatLog,
+      duelEvents
+    });
+    
+    // Add story to both players' logs
+    await addStoryEntry(winnerId, { ...duelStory, result: 'win' });
+    await addStoryEntry(loserId, { ...duelStory, result: 'loss' });
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const getFriendsList = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      return { success: true, friends: [] };
+    }
+    
+    const friendIds = userSnap.data().friends || [];
+    const friends = [];
+    
+    for (const friendId of friendIds) {
+      const friendRef = doc(db, 'users', friendId);
+      const friendSnap = await getDoc(friendRef);
+      if (friendSnap.exists()) {
+        friends.push({ id: friendId, ...friendSnap.data() });
+      }
+    }
+    
+    return { success: true, friends };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const getFriendAdventureLog = async (friendId) => {
+  try {
+    const result = await getAdventureLog(friendId);
+    return result;
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const getFriendRequests = async (userId) => {
+  try {
+    const requestsQuery = query(
+      collection(db, 'friendRequests'),
+      where('toUserId', '==', userId),
+      where('status', '==', 'pending')
+    );
+    const requestsSnapshot = await getDocs(requestsQuery);
+    
+    const requests = [];
+    for (const requestDoc of requestsSnapshot.docs) {
+      const requestData = requestDoc.data();
+      const fromUserRef = doc(db, 'users', requestData.fromUserId);
+      const fromUserSnap = await getDoc(fromUserRef);
+      
+      if (fromUserSnap.exists()) {
+        requests.push({
+          id: requestDoc.id,
+          ...requestData,
+          fromUser: fromUserSnap.data()
+        });
+      }
+    }
+    
+    return { success: true, requests };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const getPendingDuels = async (userId) => {
+  try {
+    const duelsQuery = query(
+      collection(db, 'friendlyDuels'),
+      where('opponentId', '==', userId),
+      where('status', '==', 'pending')
+    );
+    const duelsSnapshot = await getDocs(duelsQuery);
+    
+    const duels = [];
+    duelsSnapshot.forEach(doc => {
+      duels.push({ id: doc.id, ...doc.data() });
+    });
+    
+    return { success: true, duels };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const getActiveDuels = async (userId) => {
+  try {
+    const challengerQuery = query(
+      collection(db, 'friendlyDuels'),
+      where('challengerId', '==', userId),
+      where('status', '==', 'active')
+    );
+    const opponentQuery = query(
+      collection(db, 'friendlyDuels'),
+      where('opponentId', '==', userId),
+      where('status', '==', 'active')
+    );
+    
+    const [challengerSnapshot, opponentSnapshot] = await Promise.all([
+      getDocs(challengerQuery),
+      getDocs(opponentQuery)
+    ]);
+    
+    const duels = [];
+    challengerSnapshot.forEach(doc => {
+      duels.push({ id: doc.id, ...doc.data(), role: 'challenger' });
+    });
+    opponentSnapshot.forEach(doc => {
+      duels.push({ id: doc.id, ...doc.data(), role: 'opponent' });
+    });
+    
+    return { success: true, duels };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+// Battle room cleanup functions
+export const removeExpiredRooms = async () => {
+  try {
+    const roomsQuery = query(
+      collection(db, 'battleRooms'),
+      where('status', '==', 'waiting')
+    );
+    const roomsSnapshot = await getDocs(roomsQuery);
+    
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const expiredRooms = [];
+    
+    roomsSnapshot.forEach(doc => {
+      const roomData = doc.data();
+      const createdAt = new Date(roomData.createdAt);
+      if (createdAt < fiveMinutesAgo) {
+        expiredRooms.push(doc.id);
+      }
+    });
+    
+    // Delete expired rooms
+    for (const roomId of expiredRooms) {
+      await deleteDoc(doc(db, 'battleRooms', roomId));
+    }
+    
+    return { success: true, removedCount: expiredRooms.length };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+export const removeRoom = async (roomId, userId) => {
+  try {
+    const roomRef = doc(db, 'battleRooms', roomId);
+    const roomSnap = await getDoc(roomRef);
+    
+    if (!roomSnap.exists()) {
+      return { success: false, error: 'Room not found' };
+    }
+    
+    const roomData = roomSnap.data();
+    
+    // Only host can remove room
+    if (roomData.hostUserId !== userId) {
+      return { success: false, error: 'Only room creator can remove room' };
+    }
+    
+    await deleteDoc(roomRef);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
 // Profile functions
 export const updateUserProfile = async (userId, profileData) => {
   try {
     const docRef = doc(db, 'users', userId);
-    await updateDoc(docRef, profileData);
+    const docSnap = await getDoc(docRef);
+    
+    // If document doesn't exist, create it
+    if (!docSnap.exists()) {
+      await setDoc(docRef, {
+        ...profileData,
+        createdAt: new Date().toISOString()
+      });
+    } else {
+      await updateDoc(docRef, profileData);
+    }
     
     // Also update grimoire with username
     if (profileData.username) {
       const grimoireRef = doc(db, 'grimoires', userId);
-      await updateDoc(grimoireRef, { username: profileData.username, profileImage: profileData.profileImage });
+      const grimoireSnap = await getDoc(grimoireRef);
+      
+      if (grimoireSnap.exists()) {
+        await updateDoc(grimoireRef, { 
+          username: profileData.username, 
+          profileImage: profileData.profileImage 
+        });
+      }
     }
     
     return { success: true };

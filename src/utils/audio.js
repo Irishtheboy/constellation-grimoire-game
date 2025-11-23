@@ -5,6 +5,9 @@ class AudioManager {
     this.musicVolume = 0.3;
     this.sfxVolume = 0.5;
     this.initialized = false;
+    this.currentMusic = null;
+    this.musicGainNode = null;
+    this.pendingMusic = null;
   }
 
   // Initialize audio context
@@ -75,15 +78,70 @@ class AudioManager {
     }
   }
 
-  playMusic() {
-    // Simple background music
-    if (this.initialized) {
-      this.createBeep(523, 0.5, 'sine');
+  // Play background music from file
+  async playMusic(musicFile, loop = true) {
+    if (!this.initialized) {
+      await this.init();
+    }
+    
+    try {
+      // Stop current music if playing
+      this.stopMusic();
+      
+      const audio = new Audio(musicFile);
+      audio.loop = loop;
+      audio.volume = this.musicVolume;
+      
+      // Handle loading errors
+      audio.onerror = () => {
+        console.log('Music file not found:', musicFile);
+      };
+      
+      this.currentMusic = audio;
+      
+      // Try to play, handle autoplay restrictions
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          console.log('Background music started:', musicFile);
+        }).catch(error => {
+          console.log('Autoplay prevented. Music will start on user interaction.');
+          // Store for later playback
+          this.pendingMusic = audio;
+        });
+      }
+    } catch (error) {
+      console.log('Music setup failed:', error);
+    }
+  }
+  
+  // Stop background music
+  stopMusic() {
+    if (this.currentMusic) {
+      this.currentMusic.pause();
+      this.currentMusic.currentTime = 0;
+      this.currentMusic = null;
+    }
+  }
+  
+  // Pause/resume music
+  pauseMusic() {
+    if (this.currentMusic && !this.currentMusic.paused) {
+      this.currentMusic.pause();
+    }
+  }
+  
+  resumeMusic() {
+    if (this.currentMusic && this.currentMusic.paused) {
+      this.currentMusic.play();
     }
   }
 
   setMusicVolume(volume) {
     this.musicVolume = volume;
+    if (this.currentMusic) {
+      this.currentMusic.volume = volume;
+    }
   }
 
   setSFXVolume(volume) {
@@ -93,7 +151,17 @@ class AudioManager {
 
 export const audioManager = new AudioManager();
 
-// Initialize on first click
-document.addEventListener('click', () => {
+// Initialize and play pending music on first user interaction
+const initAudioOnInteraction = () => {
   audioManager.init();
-}, { once: true });
+  if (audioManager.pendingMusic) {
+    audioManager.pendingMusic.play().then(() => {
+      audioManager.currentMusic = audioManager.pendingMusic;
+      audioManager.pendingMusic = null;
+      console.log('Pending music started after user interaction');
+    }).catch(console.log);
+  }
+};
+
+document.addEventListener('click', initAudioOnInteraction, { once: true });
+document.addEventListener('keydown', initAudioOnInteraction, { once: true });

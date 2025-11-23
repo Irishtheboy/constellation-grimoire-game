@@ -13,7 +13,9 @@ export const createBattleRoom = async (hostUserId, hostGrimoire) => {
       createdAt: new Date().toISOString(),
       winner: null,
       hostInventory: hostGrimoire.inventory || {},
-      opponentInventory: {}
+      opponentInventory: {},
+      hostBuffs: {},
+      opponentBuffs: {}
     };
     
     const docRef = await addDoc(collection(db, 'battleRooms'), battleRoom);
@@ -53,6 +55,8 @@ export const joinBattleRoom = async (roomId, userId, grimoire) => {
       maxActionPoints: 3,
       hostInventory: roomData.hostInventory || {},
       opponentInventory: grimoire.inventory || {},
+      hostBuffs: {},
+      opponentBuffs: {},
       battleLog: [`Battle started! ${hostGrimoire.constellation} vs ${grimoire.constellation}`]
     });
     return { success: true };
@@ -103,33 +107,51 @@ export const useItemInBattle = async (roomId, userId, itemId) => {
     let newOpponentAP = roomData.opponentActionPoints;
     let newHostInventory = { ...roomData.hostInventory };
     let newOpponentInventory = { ...roomData.opponentInventory };
+    let newHostBuffs = { ...roomData.hostBuffs };
+    let newOpponentBuffs = { ...roomData.opponentBuffs };
     
     const casterName = isHost ? roomData.hostGrimoire.constellation : roomData.opponentGrimoire.constellation;
     let logMessage = `${casterName} used ${item.name}!`;
+    
+    // Consume item from inventory
+    if (isHost) {
+      newHostInventory[itemId] = Math.max(0, newHostInventory[itemId] - 1);
+      newHostAP -= item.actionCost;
+    } else {
+      newOpponentInventory[itemId] = Math.max(0, newOpponentInventory[itemId] - 1);
+      newOpponentAP -= item.actionCost;
+    }
     
     // Apply item effect
     if (item.effect === 'heal') {
       if (isHost) {
         newHostHP = Math.min(roomData.maxHostHP, roomData.hostHP + item.value);
-        newHostAP -= item.actionCost;
-        newHostInventory[itemId]--;
       } else {
         newOpponentHP = Math.min(roomData.maxOpponentHP, roomData.opponentHP + item.value);
-        newOpponentAP -= item.actionCost;
-        newOpponentInventory[itemId]--;
       }
       logMessage += ` Restored ${item.value} HP!`;
     } else if (item.effect === 'mana') {
       if (isHost) {
         newHostMana = Math.min(100, roomData.hostMana + item.value);
-        newHostAP -= item.actionCost;
-        newHostInventory[itemId]--;
       } else {
         newOpponentMana = Math.min(100, roomData.opponentMana + item.value);
-        newOpponentAP -= item.actionCost;
-        newOpponentInventory[itemId]--;
       }
       logMessage += ` Restored ${item.value} Mana!`;
+    } else if (item.effect.includes('_boost')) {
+      const buffKey = `${item.effect}_${Date.now()}`;
+      const buff = {
+        type: item.effect,
+        value: item.value,
+        duration: item.duration,
+        turnsLeft: item.duration
+      };
+      
+      if (isHost) {
+        newHostBuffs[buffKey] = buff;
+      } else {
+        newOpponentBuffs[buffKey] = buff;
+      }
+      logMessage += ` Gained +${item.value} ${item.effect.replace('_', ' ')} for ${item.duration} turns!`;
     }
     
     // Check turn end
@@ -153,6 +175,8 @@ export const useItemInBattle = async (roomId, userId, itemId) => {
       opponentActionPoints: newOpponentAP,
       hostInventory: newHostInventory,
       opponentInventory: newOpponentInventory,
+      hostBuffs: newHostBuffs,
+      opponentBuffs: newOpponentBuffs,
       currentTurn: nextTurn,
       battleLog: [...(roomData.battleLog || []), logMessage]
     });
@@ -207,8 +231,28 @@ export const makeBattleMove = async (roomId, userId, spellId, grimoire) => {
     
     const casterName = isHost ? roomData.hostGrimoire.constellation : roomData.opponentGrimoire.constellation;
     
+    // Apply buffs to stats
+    const buffs = isHost ? roomData.hostBuffs || {} : roomData.opponentBuffs || {};
+    let attackBonus = 0;
+    let magicBonus = 0;
+    let defenseBonus = 0;
+    let speedBonus = 0;
+    
+    Object.values(buffs).forEach(buff => {
+      if (buff.turnsLeft > 0) {
+        if (buff.type === 'attack_boost') attackBonus += buff.value;
+        if (buff.type === 'magic_boost') magicBonus += buff.value;
+        if (buff.type === 'defense_boost') defenseBonus += buff.value;
+        if (buff.type === 'speed_boost') speedBonus += buff.value;
+      }
+    });
+    
     if (spell.type === 'attack' || spell.type === 'debuff') {
-      const baseStat = grimoire.stats[spell.statMultiplier] || 10;
+      let statBonus = 0;
+      if (spell.statMultiplier === 'attack') statBonus = attackBonus;
+      else if (spell.statMultiplier === 'magic') statBonus = magicBonus;
+      
+      const baseStat = (grimoire.stats[spell.statMultiplier] || 10) + statBonus;
       const damage = Math.floor(baseStat * spell.baseDamage * (0.8 + Math.random() * 0.4));
       
       if (isHost) {
@@ -224,7 +268,7 @@ export const makeBattleMove = async (roomId, userId, spellId, grimoire) => {
       logMessage = `${casterName} cast ${spell.name} for ${damage} damage!`;
       
     } else if (spell.type === 'heal') {
-      const baseStat = grimoire.stats[spell.statMultiplier] || 10;
+      const baseStat = (grimoire.stats[spell.statMultiplier] || 10) + magicBonus;
       const healing = Math.floor(baseStat * spell.baseHeal);
       
       if (isHost) {
@@ -247,24 +291,38 @@ export const makeBattleMove = async (roomId, userId, spellId, grimoire) => {
     let status = 'active';
     let nextTurn = currentTurn;
     
+    // Check if turn should end (no action points left)
+    const remainingAP = isHost ? newHostAP : newOpponentAP;
+    if (remainingAP <= 0) {
+      nextTurn = isHost ? 'opponent' : 'host';
+      // Reset action points for next turn
+      if (isHost) {
+        newOpponentAP = 3;
+      } else {
+        newHostAP = 3;
+      }
+    }
+    
+    // Decrease buff durations and remove expired buffs
+    let updatedHostBuffs = { ...roomData.hostBuffs };
+    let updatedOpponentBuffs = { ...roomData.opponentBuffs };
+    
+    if (nextTurn !== currentTurn) { // Turn changed - decrease buffs for the player whose turn just ended
+      const endingPlayerBuffs = isHost ? updatedHostBuffs : updatedOpponentBuffs;
+      Object.keys(endingPlayerBuffs).forEach(buffKey => {
+        endingPlayerBuffs[buffKey].turnsLeft--;
+        if (endingPlayerBuffs[buffKey].turnsLeft <= 0) {
+          delete endingPlayerBuffs[buffKey];
+        }
+      });
+    }
+    
     if (newHostHP <= 0) {
       winner = 'opponent';
       status = 'completed';
     } else if (newOpponentHP <= 0) {
       winner = 'host';
       status = 'completed';
-    } else {
-      // Check if turn should end (no action points left)
-      const remainingAP = isHost ? newHostAP : newOpponentAP;
-      if (remainingAP <= 0) {
-        nextTurn = isHost ? 'opponent' : 'host';
-        // Reset action points for next turn
-        if (isHost) {
-          newOpponentAP = 3;
-        } else {
-          newHostAP = 3;
-        }
-      }
     }
     
     // Update room
@@ -279,6 +337,8 @@ export const makeBattleMove = async (roomId, userId, spellId, grimoire) => {
       winner,
       status,
       lastAnimation: animation,
+      hostBuffs: updatedHostBuffs,
+      opponentBuffs: updatedOpponentBuffs,
       battleLog: [...(roomData.battleLog || []), logMessage]
     });
     

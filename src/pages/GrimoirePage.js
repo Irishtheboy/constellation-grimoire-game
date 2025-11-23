@@ -159,6 +159,7 @@ const GrimoirePage = ({ user, grimoire }) => {
             <Link to="/spells" className="nav-btn">🔮 Spells</Link>
             <Link to="/shop" className="nav-btn">🛒 Shop</Link>
             <Link to="/adventure-log" className="nav-btn">📜 Chronicle</Link>
+            <Link to="/friends" className="nav-btn">👥 Friends</Link>
             <Link to="/leaderboard" className="nav-btn">🏆 Leaderboard</Link>
             <Link to="/profile" className="nav-btn">👤 Profile</Link>
           </nav>
